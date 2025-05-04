@@ -11,7 +11,6 @@ class AdminController extends Controller
     public function __construct()
     {
         $this->middleware('auth')->except(['showLogin', 'login']);
-        $this->middleware('admin')->except(['showLogin', 'login']);
     }
 
     public function index()
@@ -34,8 +33,12 @@ class AdminController extends Controller
 
     public function showLogin()
     {
-        if (Auth::check() && Auth::user()->role === 'admin') {
-            return redirect()->route('admin.dashboard');
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+            Auth::logout();
         }
         return view('auth.admin-login');
     }
@@ -49,7 +52,6 @@ class AdminController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-            
             if ($user->role === 'admin') {
                 $request->session()->regenerate();
                 return redirect()->intended(route('admin.dashboard'));
@@ -68,19 +70,70 @@ class AdminController extends Controller
 
     public function dashboard()
     {
-        $stats = [
-            'total_users' => User::where('role', 'user')->count(),
-            'total_registrations' => McuRegistration::count(),
-            'pending_registrations' => McuRegistration::where('status', 'pending')->count(),
-            'completed_registrations' => McuRegistration::where('status', 'completed')->count(),
-        ];
-
-        $recent_registrations = McuRegistration::with('user')
-            ->orderBy('created_at', 'desc')
+        $totalUsers = User::where('role', 'user')->count();
+        $totalRegistrations = McuRegistration::count();
+        $pendingRegistrations = McuRegistration::where('status', 'pending')->count();
+        $completedRegistrations = McuRegistration::where('status', 'completed')->count();
+        $recentRegistrations = McuRegistration::with(['user', 'hospital'])
+            ->latest()
             ->take(5)
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'recent_registrations'));
+        return view('admin.dashboard', compact(
+            'totalUsers',
+            'totalRegistrations',
+            'pendingRegistrations',
+            'completedRegistrations',
+            'recentRegistrations'
+        ));
+    }
+
+    public function registrations(Request $request)
+    {
+        $query = McuRegistration::with(['user', 'hospital', 'payment']);
+
+        // Apply filters
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('hospital_id')) {
+            $query->where('hospital_id', $request->hospital_id);
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('appointment_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('appointment_date', '<=', $request->date_to);
+        }
+
+        $registrations = $query->latest()->paginate(10);
+        $hospitals = \App\Models\Hospital::all();
+
+        return view('admin.registrations', compact('registrations', 'hospitals'));
+    }
+
+    public function showRegistration($id)
+    {
+        $registration = McuRegistration::with(['user', 'hospital', 'payment'])
+            ->findOrFail($id);
+
+        return view('admin.registration-detail', compact('registration'));
+    }
+
+    public function updateRegistrationStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => ['required', 'in:pending,approved,completed,cancelled']
+        ]);
+
+        $registration = McuRegistration::findOrFail($id);
+        $registration->status = $request->status;
+        $registration->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Registration status updated successfully.'
+        ]);
     }
 
     public function logout(Request $request)

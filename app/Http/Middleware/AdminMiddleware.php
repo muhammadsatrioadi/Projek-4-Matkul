@@ -16,10 +16,13 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->role === 'admin') {
-            return $next($request);
+        if (!Auth::check() || Auth::user()->role !== 'admin') {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
+            }
+            return redirect()->route('admin.login')->with('error', 'Unauthorized. Admin access required.');
         }
 
-        return redirect()->route('admin.login')->with('error', 'You must be an admin to access this area.');
+        return $next($request);
     }
 }

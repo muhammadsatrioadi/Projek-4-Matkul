@@ -17,8 +17,8 @@ use App\Http\Controllers\UserController;
 */
 
 // Home/Landing Page Routes
-Route::get('/', function () { 
-    return view('noUser');
+Route::get('/', function () {
+    return view('welcome');
 })->name('main');
 
 // Default Authentication Routes
@@ -58,44 +58,48 @@ Route::get('/doctor-single', function () {
 */
 
 // Admin Authentication Routes
-Route::prefix('admin')->group(function () {
-    Route::get('/login', [AdminController::class, 'showLogin'])->name('admin.login');
-    Route::post('/login', [AdminController::class, 'login'])->name('admin.login.submit');
+Route::prefix('admin')->name('admin.')->group(function () {
+    // Admin Authentication Routes
+    Route::get('/login', [AdminController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AdminController::class, 'login'])->name('login.submit');
     
     // Protected Admin Routes
     Route::middleware(['auth', 'admin'])->group(function () {
-        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-        Route::get('/', [AdminController::class, 'index'])->name('admin.index');
-        Route::post('/update-status/{id}', [AdminController::class, 'updateStatus'])->name('admin.updateStatus');
-        Route::post('/logout', [AdminController::class, 'logout'])->name('admin.logout');
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/registrations', [AdminController::class, 'registrations'])->name('registrations');
+        Route::get('/registrations/{id}', [AdminController::class, 'showRegistration'])->name('registrations.show');
+        Route::patch('/registrations/{id}/status', [AdminController::class, 'updateRegistrationStatus'])->name('registrations.update.status');
+        Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
     });
 });
 
 // User Authentication Routes
-Route::prefix('user')->group(function () {
-    Route::get('/login', [UserController::class, 'showLogin'])->name('user.login');
-    Route::post('/login', [UserController::class, 'login'])->name('user.login.submit');
-    Route::get('/register', [UserController::class, 'showRegister'])->name('user.register');
-    Route::post('/register', [UserController::class, 'register'])->name('user.register.submit');
+Route::prefix('user')->name('user.')->group(function () {
+    // User Authentication Routes
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
+    
+    // Password Reset Routes
+    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
     
     // Protected User Routes
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/dashboard', [UserController::class, 'dashboard'])->name('user.dashboard');
-        Route::get('/profile', [UserController::class, 'profile'])->name('user.profile');
-        Route::put('/profile', [UserController::class, 'updateProfile'])->name('user.profile.update');
-        Route::post('/logout', [UserController::class, 'logout'])->name('user.logout');
+    Route::middleware('auth')->group(function () {
+        Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
+        Route::get('/profile', [UserController::class, 'profile'])->name('profile');
+        Route::post('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+        
+        // MCU Registration Routes
+        Route::get('/mcu/register', [UserController::class, 'showMcuRegistration'])->name('mcu.register');
+        Route::post('/mcu/register', [UserController::class, 'storeMcuRegistration'])->name('mcu.register.submit');
+        Route::get('/mcu/history', [UserController::class, 'mcuHistory'])->name('mcu.history');
+        Route::get('/mcu/{id}', [UserController::class, 'showMcuDetails'])->name('mcu.show');
     });
-});
-
-// Global Logout Route
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
-// Password Reset Routes
-Route::prefix('password')->group(function () {
-    Route::get('/reset', [AuthController::class, 'showResetForm'])->name('password.request');
-    Route::post('/email', [AuthController::class, 'sendResetLink'])->name('password.email');
-    Route::get('/reset/{token}', [AuthController::class, 'showNewPasswordForm'])->name('password.reset');
-    Route::post('/reset', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
 /*
