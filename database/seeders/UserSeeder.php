@@ -36,6 +36,17 @@ class UserSeeder extends Seeder
             'role' => 'user',
         ]);
 
+        // Create regular user
+        User::create([
+            'name' => 'Abel',
+            'email' => 'abel@gmail.com',
+            'password' => Hash::make('abel123'),
+            'phone' => '081234567891',
+            'passport' => 'USER123',
+            'address' => 'Jl. User Raya No. 2, Jakarta Selatan',
+            'role' => 'user',
+        ]);
+
         // Create test users
         $cities = ['Jakarta Barat', 'Jakarta Timur', 'Jakarta Utara', 'Bandung', 'Surabaya'];
         

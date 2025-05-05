@@ -1,4 +1,4 @@
-@extends('layouts.shared')
+@extends('layouts.sharedlogin')
 
 @section('content')
 

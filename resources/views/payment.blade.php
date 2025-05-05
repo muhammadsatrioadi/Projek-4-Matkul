@@ -1,4 +1,4 @@
-@extends('layouts.loglayout')
+@extends('layouts.sharedlogin')
 
 @section('title', 'Payment Page')
 
