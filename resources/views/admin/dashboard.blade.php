@@ -1,163 +1,214 @@
-@extends('layouts.shared')
+@extends('layouts.admin')
 
-@section('content')
-<div class="container-fluid py-4">
+@section('admin-content')
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Dashboard</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item active">Dashboard</li>
+    </ol>
+
     <div class="row">
-        <div class="col-12 mb-4">
-            <h2 class="text-primary">
-                <i class="fas fa-tachometer-alt me-2"></i>
-                Admin Dashboard
-            </h2>
-            <p class="text-muted">Welcome back, {{ auth()->user()->name }}!</p>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ $totalRegistrations }}</h4>
+                            <div class="small">Total Registrations</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-clipboard-list fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ route('admin.registrations') }}">View Details</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ $completedMcus }}</h4>
+                            <div class="small">Completed MCUs</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ route('admin.registrations') }}">View Details</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ $pendingMcus }}</h4>
+                            <div class="small">Pending MCUs</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{{ route('admin.registrations') }}">View Details</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-info text-white mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">{{ $totalUsers }}</h4>
+                            <div class="small">Total Users</div>
+                        </div>
+                        <div>
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="#">View Details</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="row">
-        <!-- Total Users Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie me-1"></i>
+                    MCU Package Distribution
+                </div>
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Total Users</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalUsers }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+                    <canvas id="packageChart" width="100%" height="50"></canvas>
                 </div>
             </div>
         </div>
-
-        <!-- Total Registrations Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Total MCU Registrations</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $totalRegistrations }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+        <div class="col-xl-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    Registration Status Distribution
                 </div>
-            </div>
-        </div>
-
-        <!-- Pending Registrations Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Pending Registrations</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $pendingRegistrations }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Completed Registrations Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                Completed MCUs</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $completedRegistrations }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+                    <canvas id="statusChart" width="100%" height="50"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Registrations Table -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary">Recent MCU Registrations</h6>
-                    <a href="{{ route('admin.registrations') }}" class="btn btn-sm btn-primary">
-                        View All
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>Registration #</th>
-                                    <th>User</th>
-                                    <th>Hospital</th>
-                                    <th>Package</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($recentRegistrations as $registration)
-                                <tr>
-                                    <td>{{ $registration->registration_number }}</td>
-                                    <td>{{ $registration->user->name }}</td>
-                                    <td>{{ $registration->hospital->name }}</td>
-                                    <td>{{ $registration->mcu_package }}</td>
-                                    <td>{{ $registration->appointment_date->format('d M Y') }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ $registration->status === 'pending' ? 'warning' : ($registration->status === 'completed' ? 'success' : 'info') }}">
-                                            {{ ucfirst($registration->status) }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ route('admin.registrations.show', $registration->id) }}" 
-                                           class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="7" class="text-center">No recent registrations found.</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Recent MCU Registrations
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Registration No.</th>
+                            <th>Patient Name</th>
+                            <th>Hospital</th>
+                            <th>Package</th>
+                            <th>Appointment Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($recentRegistrations as $registration)
+                        <tr>
+                            <td>{{ $registration->registration_number }}</td>
+                            <td>{{ $registration->user->name }}</td>
+                            <td>{{ $registration->hospital->name }}</td>
+                            <td>{{ ucfirst($registration->mcu_package) }}</td>
+                            <td>{{ $registration->appointment_date->format('d M Y') }} {{ $registration->appointment_time->format('H:i') }}</td>
+                            <td>
+                                <span class="badge bg-{{ $registration->status === 'completed' ? 'success' : ($registration->status === 'confirmed' ? 'primary' : ($registration->status === 'cancelled' ? 'danger' : 'warning')) }}">
+                                    {{ ucfirst($registration->status) }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ route('admin.registrations.show', $registration->id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="text-center">No registrations found.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
 
-@push('styles')
-<style>
-.border-left-primary {
-    border-left: .25rem solid #4e73df!important;
-}
-.border-left-success {
-    border-left: .25rem solid #1cc88a!important;
-}
-.border-left-warning {
-    border-left: .25rem solid #f6c23e!important;
-}
-.border-left-info {
-    border-left: .25rem solid #36b9cc!important;
-}
-</style>
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Package Distribution Chart
+    var packageCtx = document.getElementById('packageChart').getContext('2d');
+    var packageChart = new Chart(packageCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Basic', 'Standard', 'Premium'],
+            datasets: [{
+                data: @json($packageDistribution),
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(153, 102, 255, 0.8)'
+                ]
+            }]
+        }
+    });
+
+    // Status Distribution Chart
+    var statusCtx = document.getElementById('statusChart').getContext('2d');
+    var statusChart = new Chart(statusCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Pending', 'Confirmed', 'Completed', 'Cancelled'],
+            datasets: [{
+                label: 'Number of Registrations',
+                data: @json($statusDistribution),
+                backgroundColor: [
+                    'rgba(255, 193, 7, 0.8)',
+                    'rgba(13, 110, 253, 0.8)',
+                    'rgba(25, 135, 84, 0.8)',
+                    'rgba(220, 53, 69, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
 @endpush
 @endsection 

@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('mcu_registrations', function (Blueprint $table) {
+        Schema::create('user_medical_records', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('hospital_id')->constrained()->onDelete('cascade');
-            $table->string('registration_number')->unique();
-            $table->string('mcu_package');
-            $table->date('appointment_date');
-            $table->time('appointment_time');
-            $table->enum('status', ['pending', 'approved', 'completed', 'cancelled'])->default('pending');
-            $table->text('medical_notes')->nullable();
+            $table->string('record_number')->unique();
+            $table->date('examination_date');
+            $table->text('diagnosis')->nullable();
+            $table->text('treatment')->nullable();
+            $table->text('doctor_notes')->nullable();
+            $table->text('lab_results')->nullable();
+            $table->string('status')->default('pending');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -30,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('mcu_registrations');
+        Schema::dropIfExists('user_medical_records');
     }
 }; 

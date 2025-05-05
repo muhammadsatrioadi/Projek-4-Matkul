@@ -12,6 +12,12 @@
                     </h4>
                 </div>
                 <div class="card-body">
+                    @if(session('status'))
+                        <div class="alert alert-success">
+                            {{ session('status') }}
+                        </div>
+                    @endif
+
                     @if(session('error'))
                         <div class="alert alert-danger">
                             {{ session('error') }}
@@ -61,13 +67,13 @@
                             <div class="row">
                                 <div class="col-6">
                                     <div class="custom-control custom-checkbox">
-                                        <input type="checkbox" class="custom-control-input" id="remember" name="remember">
+                                        <input type="checkbox" class="custom-control-input" id="remember" name="remember" {{ old('remember') ? 'checked' : '' }}>
                                         <label class="custom-control-label" for="remember">Remember Me</label>
                                     </div>
                                 </div>
                                 <div class="col-6 text-end">
-                                    @if (Route::has('password.request'))
-                                        <a class="text-primary" href="{{ route('password.request') }}">
+                                    @if (Route::has('user.password.request'))
+                                        <a class="text-primary" href="{{ route('user.password.request') }}">
                                             Forgot Password?
                                         </a>
                                     @endif

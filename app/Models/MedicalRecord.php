@@ -6,13 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UserMedicalRecord extends Model
+class MedicalRecord extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'user_id',
-        'hospital_id',
+        'mcu_registration_id',
         'record_number',
         'examination_date',
         'diagnosis',
@@ -24,40 +23,37 @@ class UserMedicalRecord extends Model
 
     protected $casts = [
         'examination_date' => 'date',
+        'lab_results' => 'array'
     ];
 
-    /**
-     * Get the user that owns the medical record.
-     */
+    public function mcuRegistration()
+    {
+        return $this->belongsTo(McuRegistration::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get the hospital associated with the medical record.
-     */
     public function hospital()
     {
         return $this->belongsTo(Hospital::class);
     }
 
-    /**
-     * Generate a unique record number.
-     */
     public static function generateRecordNumber()
     {
-        $prefix = 'MCU';
-        $year = date('Y');
-        $lastRecord = self::whereYear('created_at', $year)->latest()->first();
+        $prefix = 'MR';
+        $date = now()->format('Ymd');
+        $lastNumber = self::whereDate('created_at', today())
+            ->max('record_number');
         
-        if ($lastRecord) {
-            $lastNumber = intval(substr($lastRecord->record_number, -5));
-            $newNumber = str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
+        if ($lastNumber) {
+            $sequence = (int)substr($lastNumber, -4) + 1;
         } else {
-            $newNumber = '00001';
+            $sequence = 1;
         }
-
-        return $prefix . $year . $newNumber;
+        
+        return $prefix . $date . str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }
-}
+} 

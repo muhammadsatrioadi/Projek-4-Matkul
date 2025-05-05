@@ -8,43 +8,72 @@ use App\Models\User;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\Cookie;
 
 class AuthController extends Controller
 {
+    /**
+     * Show the user login form.
+     */
+    public function showLogin()
+    {
+        if (Auth::check()) {
+            return redirect()->route('user.dashboard');
+        }
+        return view('auth.user-login');
+    }
+
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
-        if (Auth::attempt($credentials)) {
-            return redirect()->route('admin.index'); // arahkan ke halaman admin setelah login
+        if (Auth::attempt($credentials, $request->filled('remember'))) {
+            $request->session()->regenerate();
+            return redirect()->intended(route('user.dashboard'));
         }
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
-        ]);
+        ])->onlyInput('email');
+    }
+
+    public function showRegister()
+    {
+        if (Auth::check()) {
+            return redirect()->route('user.dashboard');
+        }
+        return view('auth.user-register');
     }
 
     public function register(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string',
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'admin', // default role
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'phone' => $validated['phone'],
+            'address' => $validated['address'],
+            'role' => 'user',
         ]);
 
         Auth::login($user);
+        $request->session()->regenerate();
 
-        return redirect()->route('/');
+        return redirect()->route('user.dashboard');
     }
 
-    public function showResetForm()
+    public function showForgotPassword()
     {
         return view('auth.passwords.email');
     }
@@ -62,7 +91,7 @@ class AuthController extends Controller
             : back()->withErrors(['email' => __($status)]);
     }
 
-    public function showNewPasswordForm($token)
+    public function showResetPassword($token)
     {
         return view('auth.passwords.reset', ['token' => $token]);
     }
@@ -79,9 +108,10 @@ class AuthController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
-                    'password' => Hash::make($password),
-                    'remember_token' => Str::random(60),
-                ])->save();
+                    'password' => Hash::make($password)
+                ])->setRememberToken(Str::random(60));
+
+                $user->save();
 
                 event(new PasswordReset($user));
             }
@@ -95,8 +125,16 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
+        
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect('/');
+        
+        // Clear any remember-me cookies
+        if ($request->hasCookie('remember_web')) {
+            $cookie = Cookie::forget('remember_web');
+            return redirect()->route('main')->withCookie($cookie);
+        }
+        
+        return redirect()->route('main');
     }
 }

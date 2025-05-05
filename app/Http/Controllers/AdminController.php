@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\McuRegistration;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -33,12 +34,8 @@ class AdminController extends Controller
 
     public function showLogin()
     {
-        if (Auth::check()) {
-            $user = Auth::user();
-            if ($user->role === 'admin') {
-                return redirect()->route('admin.dashboard');
-            }
-            Auth::logout();
+        if (Auth::check() && Auth::user()->role === 'admin') {
+            return redirect()->route('admin.dashboard');
         }
         return view('auth.admin-login');
     }
@@ -52,64 +49,68 @@ class AdminController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-            if ($user->role === 'admin') {
-                $request->session()->regenerate();
-                return redirect()->intended(route('admin.dashboard'));
+            if ($user->role !== 'admin') {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'You do not have admin privileges.',
+                ]);
             }
-            
-            Auth::logout();
-            return back()->withErrors([
-                'email' => 'You do not have admin privileges.',
-            ])->withInput();
+
+            $request->session()->regenerate();
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
-        ])->withInput();
+        ])->onlyInput('email');
     }
 
     public function dashboard()
     {
+        // Get statistics
         $totalUsers = User::where('role', 'user')->count();
         $totalRegistrations = McuRegistration::count();
-        $pendingRegistrations = McuRegistration::where('status', 'pending')->count();
-        $completedRegistrations = McuRegistration::where('status', 'completed')->count();
+        $completedMcus = McuRegistration::where('status', 'completed')->count();
+        $pendingMcus = McuRegistration::whereIn('status', ['pending', 'confirmed'])->count();
+
+        // Get recent registrations
         $recentRegistrations = McuRegistration::with(['user', 'hospital'])
-            ->latest()
-            ->take(5)
+            ->orderBy('created_at', 'desc')
+            ->take(10)
             ->get();
+
+        // Get package distribution
+        $packageDistribution = McuRegistration::select('mcu_package', DB::raw('count(*) as total'))
+            ->groupBy('mcu_package')
+            ->pluck('total', 'mcu_package')
+            ->values()
+            ->toArray();
+
+        // Get status distribution
+        $statusDistribution = McuRegistration::select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->values()
+            ->toArray();
 
         return view('admin.dashboard', compact(
             'totalUsers',
             'totalRegistrations',
-            'pendingRegistrations',
-            'completedRegistrations',
-            'recentRegistrations'
+            'completedMcus',
+            'pendingMcus',
+            'recentRegistrations',
+            'packageDistribution',
+            'statusDistribution'
         ));
     }
 
-    public function registrations(Request $request)
+    public function registrations()
     {
-        $query = McuRegistration::with(['user', 'hospital', 'payment']);
+        $registrations = McuRegistration::with(['user', 'hospital'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
 
-        // Apply filters
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('hospital_id')) {
-            $query->where('hospital_id', $request->hospital_id);
-        }
-        if ($request->filled('date_from')) {
-            $query->whereDate('appointment_date', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('appointment_date', '<=', $request->date_to);
-        }
-
-        $registrations = $query->latest()->paginate(10);
-        $hospitals = \App\Models\Hospital::all();
-
-        return view('admin.registrations', compact('registrations', 'hospitals'));
+        return view('admin.registrations.index', compact('registrations'));
     }
 
     public function showRegistration($id)
@@ -117,23 +118,20 @@ class AdminController extends Controller
         $registration = McuRegistration::with(['user', 'hospital', 'payment'])
             ->findOrFail($id);
 
-        return view('admin.registration-detail', compact('registration'));
+        return view('admin.registrations.show', compact('registration'));
     }
 
     public function updateRegistrationStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => ['required', 'in:pending,approved,completed,cancelled']
+            'status' => 'required|in:pending,confirmed,completed,cancelled'
         ]);
 
         $registration = McuRegistration::findOrFail($id);
         $registration->status = $request->status;
         $registration->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Registration status updated successfully.'
-        ]);
+        return back()->with('success', 'Registration status updated successfully.');
     }
 
     public function logout(Request $request)
@@ -141,6 +139,6 @@ class AdminController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->route('admin.login')->with('success', 'You have been logged out successfully.');
+        return redirect()->route('admin.login');
     }
 }

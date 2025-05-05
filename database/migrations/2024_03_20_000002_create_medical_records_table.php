@@ -13,15 +13,16 @@ return new class extends Migration
     {
         Schema::create('medical_records', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('hospital_id')->constrained()->onDelete('cascade');
-            $table->string('registration_number')->unique();
-            $table->string('mcu_package');
-            $table->date('appointment_date');
-            $table->time('appointment_time');
-            $table->enum('status', ['pending', 'scheduled', 'completed', 'cancelled'])->default('pending');
-            $table->text('medical_notes')->nullable();
+            $table->foreignId('mcu_registration_id')->constrained()->onDelete('cascade');
+            $table->string('record_number')->unique();
+            $table->date('examination_date');
+            $table->text('diagnosis')->nullable();
+            $table->text('treatment')->nullable();
+            $table->text('doctor_notes')->nullable();
+            $table->json('lab_results')->nullable();
+            $table->enum('status', ['pending', 'in_progress', 'completed'])->default('pending');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

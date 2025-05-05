@@ -18,11 +18,20 @@ use App\Http\Controllers\UserController;
 
 // Home/Landing Page Routes
 Route::get('/', function () {
-    return view('welcome');
+    // Clear any existing authentication
+    if (auth()->check()) {
+        auth()->logout();
+        session()->invalidate();
+        session()->regenerateToken();
+    }
+    return view('noUser');
 })->name('main');
 
 // Default Authentication Routes
 Route::get('/login', function () {
+    if (auth()->check()) {
+        return redirect()->route('user.dashboard');
+    }
     return redirect()->route('user.login');
 })->name('login');
 
@@ -110,8 +119,9 @@ Route::prefix('user')->name('user.')->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     // Hospital Routes
-    Route::get('/selection-hospital', [HospitalController::class, 'selection'])->name('selection.hospital');
-    Route::get('/hospital/{id}', [HospitalController::class, 'show'])->name('hospital.show');
+    Route::get('/selection-hospital', [HospitalController::class, 'selection'])->name('hospitals.selection');
+    Route::get('/hospitals/{hospital}', [HospitalController::class, 'show'])->name('hospitals.show');
+    Route::get('/hospitals/{hospital}/details', [HospitalController::class, 'getDetails'])->name('hospitals.details');
     
     // MCU Registration Routes
     Route::post('/submit-registration', [RegistrationController::class, 'submitRegistration'])->name('submit-registration');
@@ -132,3 +142,7 @@ Route::middleware(['auth'])->group(function () {
         return view('appointment');
     })->name('appointment');
 });
+
+// Public Hospital Routes
+Route::get('/hospitals', [HospitalController::class, 'index'])->name('hospitals.index');
+Route::get('/hospitals/{hospital}', [HospitalController::class, 'show'])->name('hospitals.show');
