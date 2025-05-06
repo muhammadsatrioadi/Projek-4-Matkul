@@ -85,7 +85,7 @@
             <a class="nav-link" href="{{ route('contact') }}">Contact</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link btn btn-main-2 btn-round-full" href="noUser">Logout</a>
+            <a class="nav-link btn btn-main-2 btn-round-full" href="{{ route('user.login') }}">Logout</a>
           </li>
         </ul>
       </div>
