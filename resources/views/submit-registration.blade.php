@@ -1,4 +1,4 @@
-@extends('layouts.loglayout')
+@extends('layouts.shared')
 
 @section('title', 'Submit Registration')
 

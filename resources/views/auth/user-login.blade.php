@@ -90,7 +90,6 @@
 
                         <div class="text-center mt-4">
                             <p>Don't have an account? <a href="{{ route('user.register') }}" class="text-primary">Register here</a></p>
-                            <p class="mt-2">Are you an administrator? <a href="{{ route('admin.login') }}" class="text-primary">Admin Login</a></p>
                         </div>
                     </form>
                 </div>

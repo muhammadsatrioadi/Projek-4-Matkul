@@ -203,16 +203,36 @@ class UserController extends Controller
     }
 
     /**
-     * Show MCU history.
+     * Display the user's MCU history.
      */
-    public function mcuHistory()
+    public function mcuHistory(Request $request)
     {
-        $registrations = McuRegistration::with('hospital')
-            ->where('user_id', Auth::id())
-            ->orderBy('appointment_date', 'desc')
+        $query = McuRegistration::with('hospital')
+            ->where('user_id', Auth::id());
+
+        // Apply filters
+        if ($request->filled('hospital')) {
+            $query->where('hospital_id', $request->hospital);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('date')) {
+            $date = \Carbon\Carbon::createFromFormat('Y-m', $request->date);
+            $query->whereYear('appointment_date', $date->year)
+                  ->whereMonth('appointment_date', $date->month);
+        }
+
+        // Get MCU history with pagination
+        $mcuHistory = $query->orderBy('appointment_date', 'desc')
             ->paginate(10);
 
-        return view('user.mcu.history', compact('registrations'));
+        // Get all hospitals for the filter dropdown
+        $hospitals = Hospital::orderBy('name')->get();
+
+        return view('user.mcu.history', compact('mcuHistory', 'hospitals'));
     }
 
     /**

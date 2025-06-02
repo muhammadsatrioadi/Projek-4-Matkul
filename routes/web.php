@@ -9,6 +9,9 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\HospitalController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\HospitalController as AdminHospitalController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,7 +21,6 @@ use App\Http\Controllers\UserController;
 
 // Home/Landing Page Routes
 Route::get('/', function () {
-    // Clear any existing authentication
     if (auth()->check()) {
         auth()->logout();
         session()->invalidate();
@@ -29,36 +31,18 @@ Route::get('/', function () {
 
 // Default Authentication Routes
 Route::get('/login', function () {
-    if (auth()->check()) {
-        return redirect()->route('user.dashboard');
-    }
-    return redirect()->route('user.login');
+    return auth()->check() ? redirect()->route('user.dashboard') : redirect()->route('user.login');
 })->name('login');
 
-Route::get('/about', function () {
-    return view('about');
-})->name('about');
-
-Route::get('/services', function () {
-    return view('services');
-})->name('services');
-
-Route::get('/contact', function () {
-    return view('contact');
-})->name('contact');
+Route::get('/about', fn() => view('about'))->name('about');
+Route::get('/services', fn() => view('services'))->name('services');
+Route::get('/contact', fn() => view('contact'))->name('contact');
+Route::get('/privacy', fn() => view('privacy'))->name('privacy');
 
 Route::get('/department', [DepartController::class, 'index'])->name('department');
-Route::get('/department-single', function () {
-    return view('department-single');
-})->name('department-single');
-
-Route::get('/doctor', function () {
-    return view('doctor');
-})->name('doctor');
-
-Route::get('/doctor-single', function () {
-    return view('doctor-single');
-})->name('doctor-single');
+Route::get('/department-single', fn() => view('department-single'))->name('department-single');
+Route::get('/doctor', fn() => view('doctor'))->name('doctor');
+Route::get('/doctor-single', fn() => view('doctor-single'))->name('doctor-single');
 
 /*
 |--------------------------------------------------------------------------
@@ -68,23 +52,26 @@ Route::get('/doctor-single', function () {
 
 // Admin Authentication Routes
 Route::prefix('admin')->name('admin.')->group(function () {
-    // Admin Authentication Routes
     Route::get('/login', [AdminController::class, 'showLogin'])->name('login');
     Route::post('/login', [AdminController::class, 'login'])->name('login.submit');
     
-    // Protected Admin Routes
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/registrations', [AdminController::class, 'registrations'])->name('registrations');
         Route::get('/registrations/{id}', [AdminController::class, 'showRegistration'])->name('registrations.show');
         Route::patch('/registrations/{id}/status', [AdminController::class, 'updateRegistrationStatus'])->name('registrations.update.status');
         Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
+        
+        // Hospital Management Routes
+        Route::resource('hospitals', AdminHospitalController::class);
+        
+        // User Management Routes
+        Route::resource('users', AdminUserController::class);
     });
 });
 
 // User Authentication Routes
 Route::prefix('user')->name('user.')->group(function () {
-    // User Authentication Routes
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
@@ -96,11 +83,14 @@ Route::prefix('user')->name('user.')->group(function () {
     Route::get('/reset-password/{token}', [AuthController::class, 'showResetPassword'])->name('password.reset');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
     
-    // Protected User Routes
     Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
-        Route::get('/profile', [UserController::class, 'profile'])->name('profile');
-        Route::post('/profile', [UserController::class, 'updateProfile'])->name('profile.update');
+        
+        // Profile Routes
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+        Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
         
         // MCU Registration Routes
@@ -132,15 +122,14 @@ Route::middleware(['auth'])->group(function () {
     
     // Payment Routes
     Route::post('/payment', [PaymentController::class, 'showPaymentPage'])->name('payment');
-    Route::post('/process-payment', [PaymentController::class, 'processPayment'])->name('process.payment');
-    Route::get('/payment-success', function () {
-        return view('payment-success');
-    })->name('payment.success');
-    
-    // Appointment Routes
-    Route::get('/appointment', function () {
-        return view('appointment');
-    })->name('appointment');
+    Route::get('/payment/{registration}', [PaymentController::class, 'show'])->name('payment.show');
+    Route::post('/payment/{registration}/process', [PaymentController::class, 'processPayment'])->name('process.payment');
+    Route::get('/payment/{payment}/success', [PaymentController::class, 'success'])->name('payment.success');
+    Route::get('/payment-success', function() {
+        return redirect()->route('user.dashboard')
+            ->with('success', 'Your payment has been processed successfully.');
+    });
+    Route::get('/appointment', fn() => view('appointment'))->name('appointment');
 });
 
 // Public Hospital Routes

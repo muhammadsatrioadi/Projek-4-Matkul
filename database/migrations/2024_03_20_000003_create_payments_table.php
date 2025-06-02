@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('medical_record_id')->constrained()->onDelete('cascade');
-            $table->string('payment_number')->unique();
+            $table->foreignId('mcu_registration_id')->constrained('mcu_registrations')->onDelete('cascade');
             $table->decimal('amount', 10, 2);
-            $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
-            $table->string('payment_method')->nullable();
-            $table->json('payment_details')->nullable();
-            $table->timestamp('paid_at')->nullable();
+            $table->string('payment_method');
+            $table->string('status');
+            $table->string('transaction_id')->unique();
+            $table->timestamp('payment_date')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

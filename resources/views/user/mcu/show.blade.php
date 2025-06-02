@@ -114,7 +114,7 @@
                                 <i class="fas fa-arrow-left me-2"></i>Back to History
                             </a>
                             @if($registration->status == 'pending' && $registration->payment_status != 'paid')
-                            <a href="#" class="btn btn-primary">
+                            <a href="{{ route('payment.show', $registration->id) }}" class="btn btn-primary">
                                 <i class="fas fa-credit-card me-2"></i>Proceed to Payment
                             </a>
                             @endif

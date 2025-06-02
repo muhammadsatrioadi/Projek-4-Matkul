@@ -67,37 +67,55 @@ class AdminController extends Controller
 
     public function dashboard()
     {
-        // Get statistics
-        $totalUsers = User::where('role', 'user')->count();
-        $totalRegistrations = McuRegistration::count();
-        $completedMcus = McuRegistration::where('status', 'completed')->count();
-        $pendingMcus = McuRegistration::whereIn('status', ['pending', 'confirmed'])->count();
-
+        // Get recent hospitals (limit to 5)
+        $recentHospitals = \App\Models\Hospital::latest()->take(5)->get();
+        
+        // Get recent non-admin users (limit to 5)
+        $recentUsers = \App\Models\User::where('role', '!=', 'admin')
+            ->latest()
+            ->take(5)
+            ->get();
+        
+        // Get total registrations
+        $totalRegistrations = \App\Models\McuRegistration::count();
+        
+        // Get completed MCUs
+        $completedMcus = \App\Models\McuRegistration::where('status', 'completed')->count();
+        
+        // Get pending MCUs
+        $pendingMcus = \App\Models\McuRegistration::whereIn('status', ['pending', 'confirmed'])->count();
+        
+        // Get total users (excluding admins)
+        $totalUsers = \App\Models\User::where('role', '!=', 'admin')->count();
+        
         // Get recent registrations
-        $recentRegistrations = McuRegistration::with(['user', 'hospital'])
-            ->orderBy('created_at', 'desc')
+        $recentRegistrations = \App\Models\McuRegistration::with(['user', 'hospital'])
+            ->latest()
             ->take(10)
             ->get();
-
-        // Get package distribution
-        $packageDistribution = McuRegistration::select('mcu_package', DB::raw('count(*) as total'))
-            ->groupBy('mcu_package')
-            ->pluck('total', 'mcu_package')
-            ->values()
-            ->toArray();
-
-        // Get status distribution
-        $statusDistribution = McuRegistration::select('status', DB::raw('count(*) as total'))
-            ->groupBy('status')
-            ->pluck('total', 'status')
-            ->values()
-            ->toArray();
-
+        
+        // Get package distribution data
+        $packageDistribution = [
+            \App\Models\McuRegistration::where('mcu_package', 'basic')->count(),
+            \App\Models\McuRegistration::where('mcu_package', 'standard')->count(),
+            \App\Models\McuRegistration::where('mcu_package', 'premium')->count(),
+        ];
+        
+        // Get status distribution data
+        $statusDistribution = [
+            \App\Models\McuRegistration::where('status', 'pending')->count(),
+            \App\Models\McuRegistration::where('status', 'confirmed')->count(),
+            \App\Models\McuRegistration::where('status', 'completed')->count(),
+            \App\Models\McuRegistration::where('status', 'cancelled')->count(),
+        ];
+        
         return view('admin.dashboard', compact(
-            'totalUsers',
+            'recentHospitals',
+            'recentUsers',
             'totalRegistrations',
             'completedMcus',
             'pendingMcus',
+            'totalUsers',
             'recentRegistrations',
             'packageDistribution',
             'statusDistribution'

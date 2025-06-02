@@ -33,6 +33,17 @@ class Hospital extends Model
     ];
 
     /**
+     * Get the full image URL for the hospital.
+     */
+    public function getImageUrlAttribute($value)
+    {
+        if (!$value) {
+            return asset('assets/images/default-hospital.jpg');
+        }
+        return asset('storage/' . $value);
+    }
+
+    /**
      * Get the MCU registrations for the hospital.
      */
     public function mcuRegistrations(): HasMany
